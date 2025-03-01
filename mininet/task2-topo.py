@@ -113,17 +113,27 @@ class SingleSwitchTopo(Topo):
                                 json_path = json_path,
                                 thrift_port = thrift_port)
         
+        r2 = self.addSwitch('r2',
+                                sw_path = sw_path,
+                                json_path = json_path,
+                                thrift_port = thrift_port+1)
+        
         # Adding a host with the correct MAC and IP addresses. 
         h1 = self.addHost('h1',
                           ip = "10.0.1.1/24",
                           mac = "00:04:00:00:00:01") 
         
+        h2 = self.addHost('h2',
+                          ip = "10.0.2.1/24",
+                          mac = "00:04:00:00:00:02")
+        
         # When declaring a link, using addr2=sw_mac assigns the specified MAC address  
         # to the second argument in the link, which in this case is the switch port.
         # the same logic is applyed to port2=1
-        self.addLink(h1, r1, port2 = 1, addr2 = "aa:00:00:00:01:01")
-        
-        # TASK: follow the topology presented in the README.md
+        self.addLink(h1, r1, port2=1, addr2="aa:00:00:00:01:01")
+        self.addLink(h2, r2, port2=2, addr2="aa:00:00:00:02:02")
+
+        self.addLink(r1, r2, port1=2, port2=1, addr1="aa:00:00:00:01:02", addr2="aa:00:00:00:02:01")
 
 def main():
     # The 'topo' instance represents the network topology in Mininet.
@@ -154,6 +164,10 @@ def main():
     h1.setARP("10.0.1.254", "aa:00:00:00:01:01")
     # Configure the default route for h1 to direct traffic through interface eth0 via the gateway 10.0.1.254.
     h1.setDefaultRoute("dev eth0 via 10.0.1.254")
+
+    h2 = net.get('h2')
+    h2.setARP("10.0.2.254", "aa:00:00:00:02:02")
+    h2.setDefaultRoute("dev eth0 via 10.0.2.254")
 
 
     print("Ready !")

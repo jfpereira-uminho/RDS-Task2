@@ -4,7 +4,7 @@
 * should come form /usr/share/p4c/p4include/
 * The files :
  * p4/core.p4
- */p4/v1model.p4
+ * p4/v1model.p4
 * are here if you need/want to consult them
 */
 #include <core.p4>
@@ -35,6 +35,20 @@ header ethernet_t {
     bit<16>   etherType;
 }
 
+header ipv4_t {
+    bit<4>    version;
+    bit<4>    ihl;
+    bit<8>    diffserv;
+    bit<16>   totalLen;
+    bit<16>   identification;
+    bit<3>    flags;
+    bit<13>   fragOffset;
+    bit<8>    ttl;
+    bit<8>    protocol;
+    bit<16>   hdrChecksum;
+    ip4Addr_t srcAddr;
+    ip4Addr_t dstAddr;
+}
 
 struct metadata {
     macAddr_t nextHopMac;
@@ -42,6 +56,7 @@ struct metadata {
 
 struct headers {
     ethernet_t   ethernet;
+    ipv4_t ipv4;
 }
 
 /*************************************************************************
@@ -70,7 +85,10 @@ parser MyParser(packet_in packet,
         }
     }
 
-    
+    state parse_ipv4 {
+        packet.extract(hdr.ipv4);
+        transition accept;
+    }
 
 }
 
@@ -95,10 +113,45 @@ control MyIngress(inout headers hdr,
         mark_to_drop(standard_metadata);
     }
 
-    
+    action forward(bit<9>  egressPort, macAddr_t nextHopMac) {
+        standard_metadata.egress_spec = egressPort;
+        meta.nextHopMac = nextHopMac;
+        hdr.ipv4.ttl = hdr.ipv4.ttl - 1;
+    }
+
+    table ipv4Lpm{
+        key = {hdr.ipv4.dstAddr : lpm;}
+        actions = {
+            forward;
+            drop;
+        }
+        size = 256;
+        default_action = drop;
+    }
+
+    action rewriteMacs(macAddr_t srcMac) {
+        hdr.ethernet.srcAddr = srcMac;
+        hdr.ethernet.dstAddr = meta.nextHopMac;
+    }
+
+    table internalMacLookup{
+        key = {standard_metadata.egress_spec: exact;}
+        actions = { 
+            rewriteMacs;
+            drop;
+        }
+        size = 256;
+        default_action = drop;
+    }
      
     apply {
-        /*  ingress processing block */
+        if(hdr.ipv4.isValid()){
+            if(ipv4Lpm.apply().hit){
+                internalMacLookup.apply();
+            }
+        } else {
+            drop();
+        }
     }
 }
 
@@ -123,7 +176,17 @@ control MyComputeChecksum(inout headers  hdr, inout metadata meta) {
     apply { 
         update_checksum(
 	        hdr.ipv4.isValid(),
-            { /* fileds used for IPv4 checksum*/},
+            { hdr.ipv4.version,
+	          hdr.ipv4.ihl,
+              hdr.ipv4.diffserv,
+              hdr.ipv4.totalLen,
+              hdr.ipv4.identification,
+              hdr.ipv4.flags,
+              hdr.ipv4.fragOffset,
+              hdr.ipv4.ttl,
+              hdr.ipv4.protocol,
+              hdr.ipv4.srcAddr,
+              hdr.ipv4.dstAddr },
             hdr.ipv4.hdrChecksum,
             HashAlgorithm.csum16); }
 }
@@ -135,7 +198,7 @@ control MyComputeChecksum(inout headers  hdr, inout metadata meta) {
 control MyDeparser(packet_out packet, in headers hdr) {
     apply {
         packet.emit(hdr.ethernet);
-        packet.emit(/*ipv4 header*/);
+        packet.emit(hdr.ipv4);
     }
 }
 
