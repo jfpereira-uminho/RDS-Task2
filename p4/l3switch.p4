@@ -4,7 +4,7 @@
 * should come form /usr/share/p4c/p4include/
 * The files :
  * p4/core.p4
- */p4/v1model.p4
+ * p4/v1model.p4
 * are here if you need/want to consult them
 */
 #include <core.p4>
