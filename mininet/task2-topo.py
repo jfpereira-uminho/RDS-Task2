@@ -1,36 +1,4 @@
 #!/usr/bin/env python3
-# Copyright 2013-present Barefoot Networks, Inc.
-#
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-#   http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
-#
-############################################################################
-# RDS-TUT jfpereira - Read all comments from this point on !!!!!!
-############################################################################
-# This code is given in 
-# https://github.com/p4lang/behavioral-model/blob/main/mininet/1sw_demo.py
-# with minor adjustments to satisfy the requirements of RDS-TP3. 
-# This script works for a topology with one P4Switch connected to 253 P4Hosts. 
-# In this TP3, we only need 1 P4Switch and 2 P4Hosts.
-# The P4Hosts are regular mininet Hosts with IPv6 suppression.
-# The P4Switch it's a very different piece of software from other switches 
-# in mininet like OVSSwitch, OVSKernelSwitch, UserSwitch, etc.
-# You can see the definition of P4Host and P4Switch in p4_mininet.py
-###########################################################################
-
-from mininet.net import Mininet
-from mininet.topo import Topo
-from mininet.log import setLogLevel, info
-from mininet.cli import CLI#!/usr/bin/env python3
 """
 P4 Mininet Integration Script
 
